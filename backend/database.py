@@ -11,6 +11,7 @@ load_dotenv()
 
 # get DB_URL from .enc
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+
 # ensures SQLALCHEMY_DATABASE_URL is not None before passing it to create_engine. 
 if not SQLALCHEMY_DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")

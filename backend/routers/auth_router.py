@@ -41,7 +41,13 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         
     # hash password & create user
     hashed_password = get_password_hash(user_data.password)
-    new_user = User(**user_data.model_dump(), hashed_password = hashed_password)
+    
+    # Build user without raw password
+    new_user = User(
+        email=user_data.email,
+        username=user_data.username,
+        hashed_password = hashed_password
+    )
     
     # save the data in db
     db.add(new_user)

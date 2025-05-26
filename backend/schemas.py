@@ -21,7 +21,12 @@ class UserBase(BaseModel):
     username: str
     
 class UserCreate(UserBase):
+    email: str
+    username: str
     password: str
+    
+    class config:
+        from_attributes = True
     
 class UserLogin(BaseModel):
     username: str
@@ -33,7 +38,7 @@ class UserResponse(UserBase):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
        
         
 # product schemas
@@ -60,7 +65,7 @@ class ProductResponse(ProductBase):
     created_at: datetime
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         
         
 # cart schemas
@@ -78,7 +83,7 @@ class CartItemResponse(CartItemBase):
     product: ProductResponse
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         
 
 # order schemas
@@ -96,7 +101,7 @@ class OrderItemResponse(OrderItemBase):
     product: ProductResponse
     
     class Config:
-        orm_mode = True
+        from_attributes = True
         
 class OrderBase(BaseModel):
     total_price: float
@@ -112,4 +117,4 @@ class OrderResponse(OrderBase):
     items: List[OrderItemResponse]
     
     class Config:
-        orm_mode = True
+        from_attributes = True
