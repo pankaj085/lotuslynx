@@ -2,12 +2,11 @@
 
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
-from database import engine
-import models
+from database import engine, Base
 from routers.auth_router  import router as auth_router
 
 #create all tables
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # Initialize fastapi app
 app = FastAPI(

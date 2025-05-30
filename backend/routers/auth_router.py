@@ -8,8 +8,8 @@ from fastapi.security import OAuth2PasswordRequestForm
 # local imports
 from core.auth import get_password_hash, authenticate_user, create_access_token, get_current_user
 from database import get_db
-from models import User
-from schemas import UserResponse, UserCreate
+from models.user import User
+from schemas.user import UserResponse, UserCreate
 
 
 # Setup & Initialize router

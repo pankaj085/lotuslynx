@@ -1,8 +1,25 @@
+# Virtual Environment
 .venv/
+
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.db
+*.py[cod]
+*.so
+
+# Environment Variables
 .env
-soft-ui-design-system-main/
+
+# IDE
+.vscode/
+.idea/
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# Alembic
+alembic/versions/*.py
+!alembic/versions/.gitkeep

@@ -9,8 +9,8 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 
 # Local imports
-from models import User
-from schemas import UserResponse
+from models.user import User
+from schemas.user import UserResponse
 from database import SessionLocal
 
 # Load environment variables
