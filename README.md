@@ -1,6 +1,24 @@
 # LotusLynx E-commerce Platform
 
-A modern e-commerce platform built with FastAPI and React, featuring secure authentication, payment processing, and image management.
+> 🚧 **Project Status: Under Active Development** 
+> 
+> This project is currently in development. Features and documentation are continuously being updated.
+
+## Project Overview
+
+A backend-focused e-commerce platform built with FastAPI, emphasizing robust API development, secure authentication, and modern backend practices. While the project includes basic templates for administrative interfaces, the primary focus is on building a solid, production-ready backend API.
+
+### Key Focus Areas
+- **Backend Development**: Comprehensive FastAPI implementation
+- **API Design**: RESTful API with detailed documentation
+- **Security**: JWT authentication, role-based access control
+- **Payment Integration**: Stripe payment processing
+- **File Management**: Cloudinary integration for image storage
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Testing**: Comprehensive test coverage with pytest
+
+### Frontend Note
+The project uses simple Jinja2 templates for administrative interfaces. The primary goal is to create a robust API that can be consumed by any frontend technology in the future.
 
 ## Current Progress
 
@@ -38,73 +56,73 @@ A modern e-commerce platform built with FastAPI and React, featuring secure auth
 ```
 lotuslynx/
 │
-├── .env                      # Environment variables
-├── .gitignore                # Standard Python + frontend ignores
-├── requirements.txt          # With dev dependencies separated
-├── Dockerfile                # Multi-stage build
-├── docker-compose.yml        # App + DB + Redis + Frontend
-├── alembic.ini               # Migration config
+├── .env                       # Environment variables
+├── .gitignore                 # Standard Python + frontend ignores
+├── requirements.txt           # With dev dependencies separated
+├── Dockerfile                 # Multi-stage build
+├── docker-compose.yml         # App + DB + Redis + Frontend
+├── alembic.ini                # Migration config
 │
 ├── backend/
-│   ├── __init__.py           # Package marker
-│   ├── main.py               # FastAPI app (lifespan setup)
-│   ├── database.py           # SQLAlchemy async/sync setup
-│   ├── utils.py              # Miscellaneous helpers
+│   ├── __init__.py            # Package marker
+│   ├── main.py                # FastAPI app (lifespan setup)
+│   ├── database.py            # SQLAlchemy async/sync setup
+│   ├── utils.py               # Miscellaneous helpers
 │   │
-│   ├── core/                 # Critical utilities
-│   │   ├── __init__.py       # Exports config, auth
-│   │   ├── auth.py           # JWT logic (access/refresh)
-│   │   ├── config.py         # Pydantic settings
-│   │   └── security.py       # OAuth2 schemes
+│   ├── core/                  # Critical utilities
+│   │   ├── __init__.py        # Exports config, auth
+│   │   ├── auth.py            # JWT logic (access/refresh)
+│   │   ├── config.py          # Pydantic settings
+│   │   └── security.py        # OAuth2 schemes
 │   │
-│   ├── dependencies/         # Reusable FastAPI deps
-│   │   ├── __init__.py       # Clean exports
-│   │   ├── auth.py           # get_current_user
-│   │   ├── roles.py          # require_admin/require_editor
-│   │   ├── payments.py       # stripe_payment
-│   │   └── database.py       # get_db (session)
+│   ├── dependencies/          # Reusable FastAPI deps
+│   │   ├── __init__.py        # Clean exports
+│   │   ├── auth.py            # get_current_user
+│   │   ├── roles.py           # require_admin/require_editor
+│   │   ├── payments.py        # stripe_payment
+│   │   └── database.py        # get_db (session)
 │   │
-│   ├── models/               # SQLAlchemy ORM
-│   │   ├── __init__.py       # Exposes models
-│   │   ├── user.py           # User, roles
-│   │   ├── product.py        # Product, categories
-│   │   ├── cart.py           # Cart, CartItem
-│   │   └── order.py          # Order, OrderItem
+│   ├── models/                # SQLAlchemy ORM
+│   │   ├── __init__.py        # Exposes models
+│   │   ├── user.py            # User, roles
+│   │   ├── product.py         # Product, categories
+│   │   ├── cart.py            # Cart, CartItem
+│   │   └── order.py           # Order, OrderItem
 │   │
-│   ├── schemas/              # Pydantic models
-│   │   ├── __init__.py       # Exposes schemas
-│   │   ├── user.py           # UserCreate, UserResponse
-│   │   ├── product.py        # Product CRUD schemas
-│   │   ├── cart.py           # Cart operations
-│   │   └── order.py          # Order workflows
+│   ├── schemas/               # Pydantic models
+│   │   ├── __init__.py        # Exposes schemas
+│   │   ├── user.py            # UserCreate, UserResponse
+│   │   ├── product.py         # Product CRUD schemas
+│   │   ├── cart.py            # Cart operations
+│   │   └── order.py           # Order workflows
 │   │
-│   ├── routers/              # API endpoints
-│   │   ├── __init__.py       # Router aggregation
-│   │   ├── auth.py           # /auth/*
-│   │   ├── products.py       # /products/* (with Cloudinary)
-│   │   ├── cart.py           # /cart/*
-│   │   └── orders.py         # /orders/*
+│   ├── routers/               # API endpoints
+│   │   ├── __init__.py        # Router aggregation
+│   │   ├── auth_router.py     # /auth/*
+│   │   ├── products_router.py # /products/* (with Cloudinary)
+│   │   ├── cart_router.py     # /cart/*
+│   │   └── orders_router.py   # /orders/*
 │   │
-│   ├── services/             # External integrations
+│   ├── services/              # External integrations
 │   │   ├── __init__.py
-│   │   ├── payment.py        # Stripe/PayPal
-│   │   ├── email.py          # SMTP templates
-│   │   └── cloudinary.py     # Image upload helpers
+│   │   ├── payment.py         # Stripe/PayPal
+│   │   ├── email.py           # SMTP templates
+│   │   └── cloudinary.py      # Image upload helpers
 │   │
-│   └── tests/                # Pytest
+│   └── tests/                 # Pytest
 │       ├── __init__.py
-│       ├── conftest.py       # Fixtures
+│       ├── conftest.py        # Fixtures
 │       ├── test_auth.py
 │       └── test_products.py
 │
-├── frontend/                 # Static files
-│   ├── static/               # Built assets (Vite/Webpack)
+├── frontend/                  # Static files
+│   ├── static/                # Built assets (Vite/Webpack)
 │   │   ├── css/
 │   │   ├── js/
 │   │   └── img/
 │   │
-│   └── templates/            # Jinja2 templates
-│       ├── base.html         # Layout
+│   └── templates/             # Jinja2 templates
+│       ├── base.html          # Layout
 │       ├── auth/
 │       │   ├── login.html
 │       │   └── register.html
@@ -112,14 +130,15 @@ lotuslynx/
 │           ├── dashboard.html
 │           └── products.html
 │
-├── alembic/                  # Migrations
+├── alembic/                   # Migrations
 │   ├── versions/
 │   ├── env.py
 │   └── script.py.mako
 │
-└── scripts/                  # Deployment/DB
-    ├── seed_db.py            # Test data
-    └── backup_db.sh          # PostgreSQL dumps
+└── scripts/                   # Deployment/DB
+    ├── seed_db.py             # Test data
+    └── backup_db.sh           # PostgreSQL dumps
+
 ```
 
 ## Features
@@ -188,6 +207,73 @@ uvicorn backend.main:app --reload
    - CI/CD setup
    - Production deployment
 
+## API Documentation
+
+Once the server is running, visit:
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## Environment Variables
+
+Required environment variables in your `.env` file:
+
+```ini
+# Database
+DATABASE_URL=postgresql://user:password@localhost/dbname
+
+# Authentication
+SECRET_KEY=your-secret-key
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRES_MINUTES=30
+REFRESH_TOKEN_EXPIRES_DAYS=7
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+
+# Stripe
+STRIPE_SECRET_KEY=your-stripe-secret-key
+STRIPE_WEBHOOK_SECRET=your-webhook-secret
+STRIPE_CURRENCY=usd
+```
+
+## API Endpoints
+
+### Auth Routes
+- `POST /auth/register` - Register new user
+- `POST /auth/login` - Login user
+- `POST /auth/refresh` - Refresh access token
+
+### Product Routes
+- `GET /products` - List all products
+- `POST /products` - Create product (Admin only)
+- `GET /products/{id}` - Get product details
+- `PUT /products/{id}` - Update product (Admin only)
+- `DELETE /products/{id}` - Delete product (Admin only)
+
+### Additional routes documentation in progress...
+
+
+## Development Guidelines
+
+- Follow PEP 8 style guide
+- Write docstrings for all functions/classes
+- Include type hints
+- Write tests for new features
+- Keep the codebase modular and clean
+
+## Support & Contact
+
+For support, email [Gmail](pankaj085k@gmail.com "Send an E-Mail") or create an issue in the repository.
+
+## Acknowledgments
+
+- FastAPI Documentation
+- SQLAlchemy Documentation
+- Stripe API Documentation
+- Cloudinary Documentation
+
 ## Contributing
 
 Currently, this is a personal project in development. Contributions might be welcome in the future.
@@ -198,4 +284,4 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 
 ## Author
 
-Pankaj Kushwaha - ([GitHub](https://github.com/pankaj085 "My GitHub"))
+Pankaj Kushwaha - [GitHub](https://github.com/pankaj085 "Follow me on GitHub") | [LinkedIn](https://www.linkedin.com/in/py--dev/ "Follow me on LinkedIn")
