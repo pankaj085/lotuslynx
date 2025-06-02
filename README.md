@@ -1,8 +1,17 @@
 # LotusLynx E-commerce Platform
 
+![LotusLynx Logo](frontend/static/images/LotusLynx.svg "LotusLynx Logo")
+
 > 🚧 **Project Status: Under Active Development** 
-> 
-> This project is currently in development. Features and documentation are continuously being updated.
+
+## Tech Stack
+<p align="center">
+  <img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI" height="40"/>
+  <img src="https://www.postgresql.org/media/img/about/press/elephant.png" alt="PostgreSQL" height="40"/>
+  <img src="https://raw.githubusercontent.com/sqlalchemy/sqlalchemy/main/site/img/sqla_logo.png" alt="SQLAlchemy" height="40"/>
+  <img src="https://cloudinary-res.cloudinary.com/image/upload/cloudinary_logo.png" alt="Cloudinary" height="40"/>
+</p>
+
 
 ## Project Overview
 
