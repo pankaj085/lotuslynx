@@ -2,7 +2,7 @@
 
 <!-- Replace this with your actual logo once created -->
 <p align="center">
-  <img src="lotuslynx/frontend/static/images/lotuslynx_logo.png" alt="LotusLynx Logo" width="1088" height="309"/>
+  <img src="docs/imgs/lotuslynx_logo.png" alt="LotusLynx Logo" width="1088" height="309"/>
 </p>
 
 > 🚧 **Project Status: Under Active Development** 
