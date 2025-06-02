@@ -8,6 +8,7 @@ import enum
 # enums
 class UserRole(str, enum.Enum):
     user = "user"
+    editor = "editor"
     admin = "admin"
 
 # user models

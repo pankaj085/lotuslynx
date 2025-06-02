@@ -2,14 +2,26 @@
 
 # required imports
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import jwt, JWTError
+from sqlalchemy.orm import Session
+
 
 # local imports
-from core.auth import get_password_hash, authenticate_user, create_access_token, get_current_user
+from core.auth import (
+    get_password_hash,
+    authenticate_user,
+    create_tokens,
+    get_current_user,
+    Token
+)
+from core.config import settings
 from database import get_db
 from models.user import User
-from schemas.user import UserResponse, UserCreate
+from schemas.user import(
+    UserResponse,
+    UserCreate
+)
 
 
 # Setup & Initialize router
@@ -21,61 +33,134 @@ router = APIRouter(
 # --------------------------------
 # register endpoint
 # --------------------------------
-@router.post("/register", response_model=UserResponse)
-def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@router.post(
+    "/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register new user"
+)
+async def register(
+    user_data: UserCreate,
+    db: Session = Depends(get_db)
+):
+    """
+    Register a new user with:
+    - **username**: Unique username
+    - **email**: Valid email address
+    - **password**: Strong password (min 8 chars)
+    """
+    #Check for existing username
+    if db.query(User).filter(User.username == user_data.username).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username already taken"
+        )
     
-    # check if username & email exists already
-    existing_user = db.query(User).filter(User.username == user_data.username).first()
-    if existing_user:
+    #check for existing email
+    if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="username already taken"
+            detail="Email already in use"
         )
-        
-    existig_email = db.query(User).filter(User.email == user_data.email).first()
-    if existig_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="email already registerd"
-        )
-        
-    # hash password & create user
+    
+    # Create user
     hashed_password = get_password_hash(user_data.password)
-    
-    # Build user without raw password
     new_user = User(
-        email=user_data.email,
-        username=user_data.username,
+        username = user_data.username,
+        email = user_data.email,
         hashed_password = hashed_password
     )
     
-    # save the data in db
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
     
     return new_user
-    
+
 # --------------------------------
 # login endpoint
 # --------------------------------
-@router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    
-    user = authenticate_user(form_data.username, form_data.password)
+@router.post(
+    "/login",
+    response_model=Token,
+    summary="Authenticated user"
+)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    """
+    Authenticate user and return tokens:
+    - **username**: Your username
+    - **password**: Your password
+    Returns:
+    - **access_token**: JWT for API access
+    - **refresh_token**: Token to get new access tokens
+    - **token_type**: Always 'bearer'
+    """
+    user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="incorrect username or password",
+            detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"}
         )
+        
+    return create_tokens(str(user.username))
+
+# --------------------------------
+# Refresh Token Endpoint
+# --------------------------------
+
+@router.post(
+    "/refresh",
+    response_model=Token,
+    summary="Refresh access token"
+)
+async def refresh_token(
+    refresh_token: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get new access token using refresh token
+    """
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
+        if payload.get("type") != "refresh":
+            raise JWTError("Invalid token type")
+        
+        username = payload.get("sub")
+        if not isinstance(username, str):
+            raise JWTError("Invalid token: missing or invalid username")
     
-    access_token = create_access_token(data={"sub": user.username})
-    return {"access token": access_token, "token type": "Bearer"}
-    
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            raise JWTError("User not found")
+            
+        return create_tokens(username)  # Now username is guaranteed to be str
+        
+    except JWTError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e),
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 # --------------------------------
 # /user/me endpoint (protected route)
 # --------------------------------
-@router.post("/user/me", response_model=UserResponse)
-def read_user_me(current_user: User = Depends(get_current_user)):
+@router.post(
+    "/me",
+    response_model=UserResponse,
+    summary="Get current user credentials"
+)
+async def read_user_me(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get details of the currently authenticated user
+    """
     return current_user

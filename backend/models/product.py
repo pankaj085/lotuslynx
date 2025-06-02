@@ -1,5 +1,5 @@
 # product model 
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Float, DateTime
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone
@@ -10,9 +10,9 @@ class Product(Base):
     
     id = Column(Integer, primary_key=True)
     name = Column(String, index=True)
-    description = Column(String)
+    description = Column(String, nullable=True)
     price = Column(Float)
-    category = Column(String, index=True)
+    category = Column(String, nullable=True)
     image_url = Column(String, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     

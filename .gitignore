@@ -23,3 +23,6 @@ __pycache__/
 # Alembic
 alembic/versions/*.py
 !alembic/versions/.gitkeep
+
+#frontend as it needs to be built
+/frontend
