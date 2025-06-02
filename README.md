@@ -1,6 +1,9 @@
 # LotusLynx E-commerce Platform
 
-![LotusLynx Logo](frontend/static/images/LotusLynx.svg "LotusLynx Logo")
+<!-- Replace this with your actual logo once created -->
+<p align="center">
+  <img src="frontend/static/images/lotuslynx_logo.png" alt="LotusLynx Logo" width="1088" height="309"/>
+</p>
 
 > 🚧 **Project Status: Under Active Development** 
 
@@ -8,8 +11,8 @@
 <p align="center">
   <img src="https://fastapi.tiangolo.com/img/logo-margin/logo-teal.png" alt="FastAPI" height="40"/>
   <img src="https://www.postgresql.org/media/img/about/press/elephant.png" alt="PostgreSQL" height="40"/>
-  <img src="https://raw.githubusercontent.com/sqlalchemy/sqlalchemy/main/site/img/sqla_logo.png" alt="SQLAlchemy" height="40"/>
-  <img src="https://cloudinary-res.cloudinary.com/image/upload/cloudinary_logo.png" alt="Cloudinary" height="40"/>
+  <img src="https://res.cloudinary.com/cloudinary/image/upload/v1/logo/for_white_bg/cloudinary_logo_for_white_bg.png" alt="Cloudinary" height="40"/>
+  <img src="https://freelogopng.com/images/all_img/1685814267stripe-logo-png.png" alt="Stripe" height="40"/>
 </p>
 
 
@@ -274,7 +277,7 @@ STRIPE_CURRENCY=usd
 
 ## Support & Contact
 
-For support, email [Gmail](pankaj085k@gmail.com "Send an E-Mail") or create an issue in the repository.
+For support, mail [pankaj085k@gmail.com](mailto:pankaj085k@gmail.com "Send an E-mail") or create an issue in the repository.
 
 ## Acknowledgments
 
