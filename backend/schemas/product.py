@@ -20,8 +20,7 @@ class ProductResponse(ProductBase):
     id: int
     image_url: Optional[str] = None
     
-    class Config:
-        orm_mode = True
+    model_config = {'from_attributes': True}
 
 class ProductWithPrice(BaseModel):
     product: ProductResponse

@@ -1,14 +1,15 @@
-# backend/routers/products_router.py
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional
-import cloudinary
-import cloudinary.uploader
-from datetime import datetime
 import stripe
+from decimal import Decimal
+import logging
+from database import get_db
 
-# Dependencies and Models
+# Set up logger
+logger = logging.getLogger(__name__)
+
+# Dependencies
 from dependencies import get_db, require_admin
 from models.product import Product
 from schemas.product import (
@@ -17,70 +18,29 @@ from schemas.product import (
     ProductUpdate,
     ProductWithPrice
 )
-from core.config import settings
+from services.cloudinary import upload_to_cloudinary, delete_from_cloudinary, handle_product_image
 
 router = APIRouter(
     prefix="/products",
-    tags=["Products"]
+    tags=["Products"],
+    responses={404: {"description": "Not found"}}
 )
 
-# Configure Cloudinary
-cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET
-)
-
-# Configure Stripe
-stripe.api_key = settings.STRIPE_SECRET_KEY
-
 # --------------------------------
-# Cloudinary Image Helpers
-# --------------------------------
-
-def upload_to_cloudinary(file: UploadFile, product_id: int) -> str:
-    """Uploads image to Cloudinary with product-specific folder"""
-    try:
-        result = cloudinary.uploader.upload(
-            file.file,
-            public_id=f"product_{product_id}_{datetime.now().timestamp()}",
-            folder=f"lotuslynx/products/{product_id}",
-            quality="auto",
-            fetch_format="auto",
-            width=1200,
-            crop="limit"
-        )
-        return result["secure_url"]
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Image upload failed: {str(e)}"
-        )
-
-def delete_from_cloudinary(image_url: str) -> bool:
-    """Deletes image from Cloudinary"""
-    try:
-        public_id = image_url.split('/')[-1].split('.')[0]
-        cloudinary.uploader.destroy(public_id)
-        return True
-    except Exception:
-        return False
-
-# --------------------------------
-# Public Product Routes
+# Public Routes
 # --------------------------------
 
 @router.get("/", response_model=List[ProductResponse])
 def list_products(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, le=500),
-    category: Optional[str] = None,
-    min_price: Optional[float] = Query(None, ge=0),
-    max_price: Optional[float] = Query(None, ge=0),
+    skip: int = Query(0, ge=0, description="Pagination offset"),
+    limit: int = Query(100, le=500, description="Items per page"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    min_price: Optional[float] = Query(None, ge=0, description="Minimum price"),
+    max_price: Optional[float] = Query(None, ge=0, description="Maximum price"),
     db: Session = Depends(get_db)
 ):
     """
-    List products with filters:
+    List all products with optional filters:
     - Pagination (skip/limit)
     - Category filter
     - Price range
@@ -88,7 +48,7 @@ def list_products(
     query = db.query(Product)
 
     if category:
-        query = query.filter(Product.category == category)
+        query = query.filter(Product.category.ilike(f"%{category}%"))
     if min_price is not None:
         query = query.filter(Product.price >= min_price)
     if max_price is not None:
@@ -101,28 +61,34 @@ def get_product(
     product_id: int,
     db: Session = Depends(get_db)
 ):
-    """Get product details by ID"""
+    """Get detailed product information by ID"""
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found"
+        )
     return product
 
 # --------------------------------
-# Admin-Only Product Routes
+# Admin-Only Routes
 # --------------------------------
 
-@router.post("/", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ProductResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)]
+)
 def create_product(
     product: ProductCreate,
-    db: Session = Depends(get_db),
-    _: str = Depends(require_admin)
+    db: Session = Depends(get_db)
 ):
-    """Create new product (Admin only)"""
-    # Validate price
+    """Create a new product (Admin only)"""
     if product.price <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Price must be greater than 0"
+            detail="Price must be positive"
         )
 
     db_product = Product(**product.dict())
@@ -145,11 +111,10 @@ def update_product(
 
     update_data = product.dict(exclude_unset=True)
     
-    # Prevent price being set to 0 or negative
     if 'price' in update_data and update_data['price'] <= 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Price must be greater than 0"
+            detail="Price must be positive"
         )
 
     for field, value in update_data.items():
@@ -165,73 +130,55 @@ def delete_product(
     db: Session = Depends(get_db),
     _: str = Depends(require_admin)
 ):
-    """Delete a product and its associated image"""
-    # Get product
+    """Delete a product (Admin only)"""
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Delete image if exists
-    image_url = str(product.image_url) if product.image_url is not None else None
-    if image_url:
-        delete_from_cloudinary(image_url)
+    # Handle image deletion
+    handle_product_image(product)
 
-    # Delete product
     db.delete(product)
     db.commit()
     return None
 
 # --------------------------------
-# Image Management Routes
+# Image Management
 # --------------------------------
 
-@router.post("/{product_id}/upload-image")
-async def upload_product_image(
+@router.post(
+    "/{product_id}/upload-image",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_admin)]
+)
+def upload_product_image(
     product_id: int,
-    file: UploadFile,
-    db: Session = Depends(get_db),
-    _: str = Depends(require_admin)
+    file: UploadFile = File(..., description="Image file (JPEG/PNG)"),
+    db: Session = Depends(get_db)
 ):
     """Upload product image to Cloudinary (Admin only)"""
-    # Validate file exists and has content type
-    if not file or not file.content_type:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file upload"
-        )
-
-    # Validate file type
-    if not file.content_type.startswith('image/'):
+    if not file.content_type or not file.content_type.startswith('image/'):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only image files are allowed"
         )
 
-    try:
-        product = db.query(Product).filter(Product.id == product_id).first()
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+    product = db.query(Product).filter(Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
 
-        # Delete old image if exists
-        if product.image_url is not None:  # Check for None using SQLAlchemy's way
-            image_url = str(product.image_url)  # Convert Column to str
-            delete_from_cloudinary(image_url)
+    # Delete old image using helper function
+    handle_product_image(product)
 
-        # Upload new image
-        image_url = upload_to_cloudinary(file, product_id)
-        setattr(product, 'image_url', image_url)  # Use setattr for SQLAlchemy
-        db.commit()
+    # Upload new image
+    image_url = upload_to_cloudinary(file, str(product_id))
+    product.image_url.set(image_url) if hasattr(product.image_url, "set") else setattr(product, "image_url", image_url)
+    db.commit()
 
-        return {"image_url": image_url}
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process image upload: {str(e)}"
-        )
+    return {"image_url": image_url}
 
 # --------------------------------
-# Stripe Payment Integration
+# Stripe Integration
 # --------------------------------
 
 @router.post("/{product_id}/create-payment-intent", response_model=ProductWithPrice)
@@ -239,39 +186,49 @@ def create_payment_intent(
     product_id: int,
     db: Session = Depends(get_db)
 ):
-    """Create Stripe PaymentIntent for a product"""
+    """Create Stripe PaymentIntent for checkout"""
     product = db.query(Product).filter(Product.id == product_id).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     try:
-        # Get the actual price value and convert to cents
-        price_value = float(str(product.price))  # Convert Column to string first
-        amount = int(price_value * 100)  # Convert to cents
+        # Convert SQLAlchemy Column to Decimal for precise calculation
+        price = Decimal(str(product.price))
+        amount = int(price * 100)  # Convert to cents
         
-        # Create payment intent with proper type conversions
-        payment_intent = stripe.PaymentIntent.create(
+        intent = stripe.PaymentIntent.create(
             amount=amount,
             currency="usd",
             metadata={
                 "product_id": str(product.id),
                 "product_name": str(product.name)
-            },
-            description=f"Purchase of {str(product.name)}"
+            }
         )
-
+        
         return {
             "product": product,
-            "client_secret": payment_intent.client_secret,
+            "client_secret": intent.client_secret,
             "amount": amount
         }
-    except (ValueError, TypeError) as e:
+        
+    except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid price format: {str(e)}"
         )
-    except stripe.StripeError as e:  # Changed from stripe.error.StripeError
+    except stripe.StripeError as e:
+        # Get HTTP status from Stripe error or default to 400
+        status_code = getattr(e, 'http_status', 400)
+        # Get user message or fallback to error string
+        error_message = getattr(e, 'user_message', str(e))
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e.user_message)
+            status_code=status_code,
+            detail=error_message
+        )
+    except Exception as e:
+        # Log unexpected errors but don't expose details to client
+        logger.error(f"Unexpected error in payment processing: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="An unexpected error occurred processing the payment"
         )

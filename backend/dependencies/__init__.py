@@ -4,7 +4,7 @@ from .auth import (
     get_current_active_user,
     oauth2_scheme
 )
-from .database import get_db
+from database import get_db
 from .roles import require_admin, require_editor
 from .payments import stripe_payment
 
